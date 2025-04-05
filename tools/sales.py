@@ -1,6 +1,10 @@
+import logging
+
 from langchain_core.tools import tool
 
 from store.dealership_store import INVENTORY, Car
+
+logger = logging.getLogger("ai-chat")
 
 
 @tool
@@ -10,5 +14,5 @@ def list_inventory() -> list[Car]:
     Returns:
         Inventory: The inventory
     """
-    print("Getting inventory")
+    logger.info("Getting inventory")
     return INVENTORY.availables
