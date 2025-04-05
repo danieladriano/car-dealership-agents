@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from random import randint
 from typing import List
 
 from langchain_core.tools import tool
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 @tool
 def schedule_test_drive(
     date: datetime, car: Car, name: str, driver_licence: str
-) -> bool:
+) -> int:
     """Schedule a test drive for a specific car
 
     Args:
@@ -22,12 +23,19 @@ def schedule_test_drive(
         driver_licence (str): Client's driver licence
 
     Returns:
-        bool: Confirm the schedule
+        int: Test drive code
     """
-    test_drive = TestDrive(date=date, car=car, name=name, driver_licence=driver_licence)
+    code = randint(0, 10)
+    test_drive = TestDrive(
+        code=code,
+        date=date,
+        car=car,
+        name=name,
+        driver_licence=driver_licence,
+    )
     print(f"Scheduling an test drive: {test_drive}")
     TEST_DRIVE.append(test_drive)
-    return True
+    return code
 
 
 @tool
@@ -39,3 +47,21 @@ def list_test_drives() -> List[TestDrive]:
     """
     print("Returning test drivers")
     return TEST_DRIVE
+
+
+@tool
+def cancel_test_drive(code: int) -> bool:
+    """Cance a test drive
+
+    Args:
+        code (int): The code of the test drive
+
+    Returns:
+        bool: Confirm the cancel
+    """
+    print(f"Cancel test drive of code {code}")
+    for i, test in enumerate(TEST_DRIVE):
+        if test.code == code:
+            TEST_DRIVE.pop(i)
+            return True
+    return False

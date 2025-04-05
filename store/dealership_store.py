@@ -38,6 +38,7 @@ class Inventory(BaseModel):
 
 
 class TestDrive(BaseModel):
+    code: int
     date: datetime
     car: Car
     name: str

@@ -1,9 +1,11 @@
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, List
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import AnyMessage, SystemMessage
+from langchain_core.messages.ai import AIMessage
+from langchain_core.messages.human import HumanMessage
 from langchain_core.runnables.config import RunnableConfig
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import MemorySaver
@@ -11,16 +13,17 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
+from langgraph.types import Command
 from langgraph.utils.runnable import RunnableCallable
 from typing_extensions import TypedDict
 
 from llm_models import SupportedLLMs, get_llm
 from tools.sales import list_inventory
-from tools.test_drive import list_test_drives, schedule_test_drive
+from tools.test_drive import cancel_test_drive, list_test_drives, schedule_test_drive
 
 
 class State(TypedDict):
-    messages: Annotated[list, add_messages]
+    messages: Annotated[List[AnyMessage], add_messages]
 
 
 class Agent:
@@ -31,12 +34,14 @@ class Agent:
     def _prompt(self) -> RunnableCallable:
         content = f""" You are a helpfull Volkswagen Dealership Assistant
 
-                    You need to follow this rules:
-                    1. Choose your action using the tools that are available to you.
-                    2. If there is no tool to call with the user request,
-                       ask for more context about what the user want.
-                    3. Always elaborate a complete response to the user.
-                    4. Never reference our tools to the user
+                    You must use the tools available to deal with the user request.
+
+                    This is the tools available to you:
+
+                    - list_inventory
+                    - list_test_drivers
+                    - schedule_test_drive
+                    - cancel_test_drive
 
                     Current Date: {datetime.now()}
                     """
@@ -46,16 +51,18 @@ class Agent:
     def conditional_router(self, state: State) -> str:
         messages = state["messages"]
         last_message = messages[-1]
-        if last_message.tool_calls:
+
+        if isinstance(last_message, AIMessage) and last_message.tool_calls:
+            print(f"[conditional_router] {last_message.tool_calls[0]['name']}")
             return "tools"
         return END
 
     def call_model(self, state: State) -> State:
         assistant_runnable = self._prompt | self._llm.bind_tools(
-            [list_inventory, schedule_test_drive, list_test_drives]
+            [list_inventory, list_test_drives, schedule_test_drive, cancel_test_drive]
         )
         response = assistant_runnable.invoke(state["messages"])
-        return {"messages": [response]}
+        return {"messages": [response]}  # type: ignore
 
     def build_agent(
         self, checkpointer: BaseCheckpointSaver | None = None
@@ -64,12 +71,21 @@ class Agent:
         graph_builder.add_node(node="call_model", action=self.call_model)
         graph_builder.add_node(
             node="tools",
-            action=ToolNode([list_inventory, schedule_test_drive, list_test_drives]),
+            action=ToolNode(
+                [
+                    list_inventory,
+                    list_test_drives,
+                    schedule_test_drive,
+                    cancel_test_drive,
+                ]
+            ),
         )
 
         graph_builder.add_edge(start_key=START, end_key="call_model")
         graph_builder.add_conditional_edges(
-            source="call_model", path=self.conditional_router, path_map=["tools", END]
+            source="call_model",
+            path=self.conditional_router,
+            path_map=["tools", END],
         )
         graph_builder.add_edge(start_key="tools", end_key="call_model")
 
@@ -79,9 +95,20 @@ class Agent:
 def stream_graph_updates(
     graph: CompiledStateGraph, config: RunnableConfig, user_input: str
 ) -> None:
-    messages = {"messages": [("user", user_input)]}
+    state = graph.get_state(config=config)
+    if state.tasks and state.tasks[0].interrupts:
+        graph_input = Command(resume=HumanMessage(content=user_input))
+    else:
+        graph_input = ("user", user_input)
+
+    messages = {"messages": [graph_input]}
     events = graph.invoke(input=messages, config=config, stream_mode="values")
-    events["messages"][-1].pretty_print()
+
+    state = graph.get_state(config=config)
+    if state.tasks and state.tasks[0].interrupts:
+        print(state.tasks[0].interrupts[0].value)
+    else:
+        events["messages"][-1].pretty_print()
 
 
 def main() -> None:
