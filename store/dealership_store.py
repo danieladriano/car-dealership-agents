@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import StrEnum, auto
 from typing import List
 
@@ -71,5 +71,19 @@ def create_initial_stock() -> Inventory:
     )
 
 
+def create_test_drivers() -> List[TestDrive]:
+    return [
+        TestDrive(
+            code=5,
+            date=datetime.now() + timedelta(days=2),
+            car=Car(
+                model=Models.GOLF, color=Color.BLACK, kms=0, year=2025, value=35000
+            ),
+            name="John Doe",
+            driver_licence="HGJSK123KO",
+        )
+    ]
+
+
 INVENTORY: Inventory = create_initial_stock()
-TEST_DRIVE: List[TestDrive] = []
+TEST_DRIVE: List[TestDrive] = create_test_drivers()

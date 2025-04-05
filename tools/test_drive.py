@@ -49,7 +49,6 @@ def list_test_drives() -> List[TestDrive]:
     return TEST_DRIVE
 
 
-@tool
 def cancel_test_drive(code: int) -> bool:
     """Cance a test drive
 
