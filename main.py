@@ -16,6 +16,7 @@ from typing_extensions import TypedDict
 
 from llm_models import SupportedLLMs, get_llm
 from tools.sales import list_inventory
+from tools.test_drive import list_test_drives, schedule_test_drive
 
 
 class State(TypedDict):
@@ -50,7 +51,9 @@ class Agent:
         return END
 
     def call_model(self, state: State) -> State:
-        assistant_runnable = self._prompt | self._llm.bind_tools([list_inventory])
+        assistant_runnable = self._prompt | self._llm.bind_tools(
+            [list_inventory, schedule_test_drive, list_test_drives]
+        )
         response = assistant_runnable.invoke(state["messages"])
         return {"messages": [response]}
 
@@ -61,7 +64,7 @@ class Agent:
         graph_builder.add_node(node="call_model", action=self.call_model)
         graph_builder.add_node(
             node="tools",
-            action=ToolNode([list_inventory]),
+            action=ToolNode([list_inventory, schedule_test_drive, list_test_drives]),
         )
 
         graph_builder.add_edge(start_key=START, end_key="call_model")
@@ -82,7 +85,7 @@ def stream_graph_updates(
 
 
 def main() -> None:
-    llm = get_llm(llm_model=SupportedLLMs.llama3_1)
+    llm = get_llm(llm_model=SupportedLLMs.qwen2_5_14b)
     checkpointer = MemorySaver()
     chatbot = Agent(llm=llm)
     graph = chatbot.build_agent(checkpointer=checkpointer)
@@ -92,7 +95,7 @@ def main() -> None:
     print("Assistant: Welcome! How can I help you today?")
     while True:
         try:
-            print(80*"=")
+            print(80 * "=")
             user_input = input("User: ")
             if user_input.lower() in ["quit", "exit"]:
                 print("Goodbye!")
