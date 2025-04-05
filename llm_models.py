@@ -5,16 +5,13 @@ from langchain_ollama import ChatOllama
 
 
 class SupportedLLMs(Enum):
-    llama3_1 = "llama3.1"
+    llama3_1 = "llama3.1:8b"
     llama3_2 = "llama3.2"
-    mistral_7b = "mistral_7b"
+    mistral_7b = "mistral:7b"
+    qwen2_5_14b = "qwen2.5:14b"
 
 
 def get_llm(llm_model: SupportedLLMs) -> BaseChatModel:
-    if llm_model == SupportedLLMs.llama3_1:
-        return ChatOllama(model="llama3.1:8b")
-    if llm_model == SupportedLLMs.llama3_2:
-        return ChatOllama(model="llama3.2")
-    if llm_model == SupportedLLMs.mistral_7b:
-        return ChatOllama(model="mistral:7b")
+    if llm_model in SupportedLLMs:
+        return ChatOllama(model=llm_model.value)
     raise Exception("LLM not supported")
