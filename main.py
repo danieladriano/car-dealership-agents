@@ -54,7 +54,7 @@ def main() -> None:
 
     config = RunnableConfig(configurable={"thread_id": uuid.uuid4()})
 
-    logger.info("Welcome! How can I help you today?")
+    logger.info("Assistant: Welcome! How can I help you today?")
     while True:
         try:
             logger.info(80 * "=")
@@ -69,7 +69,7 @@ def main() -> None:
                 graph=graph, config=config, user_input=user_input
             )
             logger.info(80 * "-")
-            logger.info(ai_message)
+            logger.info(f"Assistant: {ai_message}")
         except Exception as ex:
             logger.error(ex)
 

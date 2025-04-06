@@ -6,7 +6,13 @@ from typing import List
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from store.dealership_store import TEST_DRIVE, Car, TestDrive
+from store.dealership_store import (
+    TEST_DRIVE,
+    Car,
+    TestDrive,
+    TestDriveStatus,
+    save_test_drivers,
+)
 
 logger = logging.getLogger("ai-chat")
 
@@ -27,9 +33,10 @@ def cancel_test_drive(code: int) -> bool:
         bool: Confirm the cancel
     """
     logger.info(f"Cancel test drive of code {code}")
-    for i, test in enumerate(TEST_DRIVE):
+    for test in TEST_DRIVE:
         if test.code == code:
-            TEST_DRIVE.pop(i)
+            test.status = TestDriveStatus.CANCEL
+            save_test_drivers()
             return True
     return False
 
@@ -59,6 +66,7 @@ def schedule_test_drive(
     )
     logger.info(f"Scheduling test drive: {test_drive}")
     TEST_DRIVE.append(test_drive)
+    save_test_drivers()
     return code
 
 

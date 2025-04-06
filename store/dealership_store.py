@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import StrEnum, auto
 from typing import List
 
+import orjson
 from pydantic import BaseModel
 
 
@@ -21,6 +22,12 @@ class Color(StrEnum):
     WHITE = auto()
     RED = auto()
     GREEN = auto()
+
+
+class TestDriveStatus(StrEnum):
+    SCHEDULED = auto()
+    CANCEL = auto()
+    DONE = auto()
 
 
 class Car(BaseModel):
@@ -43,47 +50,30 @@ class TestDrive(BaseModel):
     car: Car
     name: str
     driver_licence: str
+    status: TestDriveStatus = TestDriveStatus.SCHEDULED
 
 
-def create_initial_stock() -> Inventory:
-    return Inventory(
-        availables=[
-            Car(model=Models.GOLF, color=Color.BLACK, kms=0, year=2025, value=35000),
-            Car(model=Models.GOLF, color=Color.BLUE, kms=0, year=2025, value=35500),
-            Car(model=Models.POLO, color=Color.WHITE, kms=0, year=2025, value=25000),
-            Car(model=Models.POLO, color=Color.RED, kms=0, year=2025, value=25500),
-            Car(model=Models.T_CROSS, color=Color.BLACK, kms=0, year=2025, value=33000),
-            Car(
-                model=Models.GOLF, color=Color.WHITE, kms=14867, year=2023, value=23500
-            ),
-            Car(
-                model=Models.POLO, color=Color.BLACK, kms=58276, year=2020, value=12350
-            ),
-            Car(model=Models.POLO, color=Color.RED, kms=9239, year=2022, value=20000),
-            Car(
-                model=Models.T_CROSS,
-                color=Color.BLACK,
-                kms=67890,
-                year=2024,
-                value=27000,
-            ),
-        ]
-    )
+def save_inventory() -> None:
+    with open("./store/inventory.json", "w") as f:
+        f.write(INVENTORY.model_dump_json(indent=4))
 
 
-def create_test_drivers() -> List[TestDrive]:
-    return [
-        TestDrive(
-            code=5,
-            date=datetime.now() + timedelta(days=2),
-            car=Car(
-                model=Models.GOLF, color=Color.BLACK, kms=0, year=2025, value=35000
-            ),
-            name="John Doe",
-            driver_licence="HGJSK123KO",
-        )
-    ]
+def save_test_drivers() -> None:
+    with open("./store/test_driver.json", "wb") as f:
+        f.write(orjson.dumps([test_drive.model_dump() for test_drive in TEST_DRIVE]))
 
 
-INVENTORY: Inventory = create_initial_stock()
-TEST_DRIVE: List[TestDrive] = create_test_drivers()
+def load_inventory() -> Inventory:
+    with open("./store/inventory.json", "rb") as f:
+        row_data = orjson.loads(f.read())
+    return Inventory(**row_data)
+
+
+def load_test_drivers() -> list[TestDrive]:
+    with open("./store/test_driver.json", "rb") as f:
+        row_data = orjson.loads(f.read())
+    return [TestDrive(**data) for data in row_data]
+
+
+INVENTORY: Inventory = load_inventory()
+TEST_DRIVE: List[TestDrive] = load_test_drivers()
