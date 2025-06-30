@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+.cognee_system
+.data_storage
+.ruff_cache
+.artifacts
