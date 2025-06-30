@@ -7,8 +7,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def load_cognee() -> None:
-    data_path = str(Path(  # noqa: F821
+    data_path = str(
+        Path(  # noqa: F821
             os.path.join(Path(__file__).parent, ".data_storage")
         ).resolve()
     )
@@ -23,9 +25,12 @@ def load_cognee() -> None:
 
 async def search(query_text: str) -> str:
     logger.info(f"Calling cognee: {query_text}")
-    response = await cognee.search(query_text=query_text, query_type=cognee.SearchType.RAG_COMPLETION)
+    response = await cognee.search(
+        query_text=query_text, query_type=cognee.SearchType.RAG_COMPLETION
+    )
     logger.info(f"Response: {response}")
     return response[0]
+
 
 st.title("Simple chat")
 
@@ -42,7 +47,7 @@ if prompt := st.chat_input("What is up?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(body=prompt)
-    
+
     with st.chat_message("assistant"):
         response = asyncio.run(search(query_text=prompt))
         st.markdown(response)
