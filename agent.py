@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import Annotated, List
 
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AnyMessage, SystemMessage
 from langchain_core.messages.ai import AIMessage
@@ -12,10 +13,10 @@ from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.types import interrupt
-from langgraph.utils.runnable import RunnableCallable
 from typing_extensions import TypedDict
 
-from tools.sales import list_inventory
+from assets import CancelTestDriveMessages
+from tools.sales import list_inventory, car_information
 from tools.test_drive import (
     CancelTestDrive,
     cancel_test_drive,
@@ -33,24 +34,29 @@ class State(TypedDict):
 class Agent:
     def __init__(self, llm: BaseChatModel) -> None:
         self._llm = llm
+        self._runnable = self._get_prompt_template() | self._llm.bind_tools(
+            [
+                list_inventory,
+                car_information,
+                list_test_drives,
+                schedule_test_drive,
+                CancelTestDrive,
+            ]
+        )
 
-    @property
-    def _prompt(self) -> RunnableCallable:
-        content = f""" You are a helpfull Volkswagen Dealership Assistant
-
-                    You must use the tools available to deal with the user request.
-
-                    This is the tools available to you:
-
-                    - list_inventory
-                    - list_test_drivers
-                    - schedule_test_drive
-                    - CancelTestDrive
+    def _get_prompt_template(self) -> ChatPromptTemplate:
+        content = f""" You are a helpfull Volkswagen Dealership Assistant.
+                    Your main objective is to help the user to find a perfect car for his needs.
+                    Be polite and helpfull.
 
                     Current Date: {datetime.now()}
                     """
-        system_message = SystemMessage(content=content)
-        return RunnableCallable(lambda state: [system_message] + state, name="Prompt")
+        return ChatPromptTemplate(
+            [
+                SystemMessage(content=content),
+                MessagesPlaceholder(variable_name="conversation"),
+            ]
+        )
 
     def conditional_router(self, state: State) -> str:
         messages = state["messages"]
@@ -67,26 +73,23 @@ class Agent:
 
     def call_model(self, state: State) -> State:
         logger.info("Calling model")
-        assistant_runnable = self._prompt | self._llm.bind_tools(
-            [list_inventory, list_test_drives, schedule_test_drive, CancelTestDrive]
-        )
-        response = assistant_runnable.invoke(state["messages"])
+        response = self._runnable.invoke({"conversation": state["messages"]})
+
         return {"messages": [response]}  # type: ignore
 
     def cancel_test_drive_node(self, state: State) -> State:
         if isinstance(state["messages"][-1], AIMessage):
             tool_call = state["messages"][-1].tool_calls[0]
+
         cancel = CancelTestDrive.model_validate(tool_call["args"])
-        user_answer = interrupt(
-            f"Do you confirm the cancel of test drive code {cancel.code}? [y/n]"
-        )
-        content = "User gave up canceling, He want to do the test drive."
+        user_answer = interrupt(CancelTestDriveMessages.CONFIRM.format(cancel.code))
+
+        content = CancelTestDriveMessages.NOT_CANCEL
         if user_answer.content == "y":
-            content = (
-                "Error when canceling the test drive. Need to call do the dealership."
-            )
+            content = CancelTestDriveMessages.ERROR_CANCEL
             if cancel_test_drive(code=cancel.code):
-                content = "Test drive canceled."
+                content = CancelTestDriveMessages.CANCELD
+
         return {
             "messages": [
                 ToolMessage(content=content, tool_call_id=tool_call["id"], type="tool")
@@ -100,9 +103,13 @@ class Agent:
         graph_builder.add_node(node="call_model", action=self.call_model)
         graph_builder.add_node(
             node="tools",
-            action=ToolNode([list_inventory, list_test_drives, schedule_test_drive]),
+            action=ToolNode(
+                [list_inventory, car_information, list_test_drives, schedule_test_drive]
+            ),
         )
-        graph_builder.add_node("cancel_test_drive", self.cancel_test_drive_node)
+        graph_builder.add_node(
+            node="cancel_test_drive", action=self.cancel_test_drive_node
+        )
 
         graph_builder.add_edge(start_key=START, end_key="call_model")
         graph_builder.add_conditional_edges(

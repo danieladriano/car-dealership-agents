@@ -19,9 +19,8 @@ def get_llm(llm_model: SupportedLLMs) -> BaseChatModel:
         if llm_model == SupportedLLMs.gemini2_0_flash:
             return ChatGoogleGenerativeAI(
                 model="gemini-2.0-flash",
-                temperature=0,
-                max_tokens=None,
-                timeout=None,
+                temperature=1.5,
+                top_p=0.95,
                 max_retries=2,
             )
         return ChatOllama(model=llm_model.value)
