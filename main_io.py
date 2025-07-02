@@ -1,27 +1,18 @@
-import streamlit as st
 import logging
-from llm_models import SupportedLLMs, get_llm
-from agent import Agent
-from langchain_core.runnables.config import RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
 import uuid
-
 from typing import Optional
 
 from langchain_core.messages.human import HumanMessage
+from langchain_core.runnables.config import RunnableConfig
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, Interrupt
 
-logger = logging.getLogger(__name__)
+from agent import Agent
+from llm_models import SupportedLLMs, get_llm
 
-
-logger.info("Loading LLM and Graph")
-llm = get_llm(llm_model=SupportedLLMs.gemini2_0_flash)
-checkpointer = MemorySaver()
-chatbot = Agent(llm=llm)
-graph = chatbot.build_agent(checkpointer=checkpointer)
-
-config = RunnableConfig(configurable={"thread_id": uuid.uuid4()})
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("ai-chat")
 
 
 def _get_interrupt(
@@ -55,23 +46,33 @@ def stream_graph_updates(
     return events["messages"][-1].content
 
 
-st.title("VW - Car Dealership")
+def main() -> None:
+    llm = get_llm(llm_model=SupportedLLMs.gemini2_0_flash)
+    checkpointer = MemorySaver()
+    chatbot = Agent(llm=llm)
+    graph = chatbot.build_agent(checkpointer=checkpointer)
 
-logger.info(f"Session state {st.session_state}")
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    config = RunnableConfig(configurable={"thread_id": uuid.uuid4()})
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+    logger.info("Assistant: Welcome! How can I help you today?")
+    while True:
+        try:
+            logger.info(80 * "=")
+            user_input = input("INFO:ai-chat:User: ")
+            logger.info(80 * "-")
 
-if prompt := st.chat_input("What is up?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(body=prompt)
+            if user_input.lower() in ["quit", "exit"]:
+                logger.info("Goodbye!")
+                break
 
-    with st.chat_message("assistant"):
-        response = stream_graph_updates(graph=graph, config=config, user_input=prompt)
-        st.markdown(response)
+            ai_message = stream_graph_updates(
+                graph=graph, config=config, user_input=user_input
+            )
+            logger.info(80 * "-")
+            logger.info(f"Assistant: {ai_message}")
+        except Exception as ex:
+            logger.error(ex)
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+
+if __name__ == "__main__":
+    main()
