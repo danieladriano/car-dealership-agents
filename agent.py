@@ -2,11 +2,12 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, List
+from urllib.error import ContentTooShortError
 
+from git import Optional
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AnyMessage, SystemMessage
-from langchain_core.messages.ai import AIMessage
+from langchain_core.messages import AnyMessage, SystemMessage, AIMessage, ToolCall
 from langchain_core.messages.tool import ToolMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
@@ -30,16 +31,27 @@ from tools.test_drive import (
 logger = logging.getLogger("ai-chat")
 
 
-class State(TypedDict):
+class State(BaseModel):
     messages: Annotated[List[AnyMessage], add_messages]
+
+    def get_latest_tool_call(self) -> Optional[ToolCall]:
+        if isinstance(self.messages[-1], AIMessage) and self.messages[-1].tool_calls:
+            return self.messages[-1].tool_calls[0]
+        return None
 
 
 class CarModelDetails(BaseModel):
     """
-    If the user wants more tecnical details about a specific car model.
+    If the user asks for more information about a specific car model.
+    You can awser questions about:
+    - The engine
+    - safety features
+    - dimensions
     """
 
-    user_request: str = Field(description="The user request about the car model")
+    user_request: str = Field(
+        description="The user request about the car model. Do not specify the year of the car."
+    )
 
 
 class Agent:
@@ -53,7 +65,8 @@ class Agent:
                 schedule_test_drive,
                 CancelTestDrive,
                 CarModelDetails,
-            ]
+            ],
+            parallel_tool_calls=False,
         )
         self._graph_memory = GraphMemory(data_path=data_path, cognee_path=cognee_path)
 
@@ -73,53 +86,44 @@ class Agent:
 
     def call_model(self, state: State) -> State:
         logger.info("Calling model")
-        response = self._runnable.invoke({"conversation": state["messages"]})
+        response = self._runnable.invoke({"conversation": state.messages})
 
-        return {"messages": [response]}  # type: ignore
+        return State(messages=[response])  # type: ignore
 
     def cancel_test_drive_node(self, state: State) -> State:
-        if isinstance(state["messages"][-1], AIMessage):
-            tool_call = state["messages"][-1].tool_calls[0]
+        if tool_call := state.get_latest_tool_call():
+            cancel = CancelTestDrive.model_validate(tool_call["args"])
+            user_answer = interrupt(
+                CancelTestDriveMessages.CONFIRM.format(code=cancel.code)
+            )
 
-        cancel = CancelTestDrive.model_validate(tool_call["args"])
-        user_answer = interrupt(CancelTestDriveMessages.CONFIRM.format(cancel.code))
+            content = CancelTestDriveMessages.NOT_CANCEL
+            if user_answer.content == "y":
+                content = CancelTestDriveMessages.ERROR_CANCEL
+                if cancel_test_drive(code=cancel.code):
+                    content = CancelTestDriveMessages.CANCELD
 
-        content = CancelTestDriveMessages.NOT_CANCEL
-        if user_answer.content == "y":
-            content = CancelTestDriveMessages.ERROR_CANCEL
-            if cancel_test_drive(code=cancel.code):
-                content = CancelTestDriveMessages.CANCELD
-
-        return {
-            "messages": [
-                ToolMessage(content=content, tool_call_id=tool_call["id"], type="tool")
-            ]
-        }
+            return State(
+                messages=[ToolMessage(content=content, tool_call_id=tool_call["id"])]
+            )
+        return state
 
     async def car_model_details_node(self, state: State) -> State:
-        if isinstance(state["messages"][-1], AIMessage):
-            tool_call = state["messages"][-1].tool_calls[0]
-
-        response = await self._graph_memory.search(
-            query_text=tool_call["args"]["user_request"]
-        )
-        return {
-            "messages": [
-                ToolMessage(content=response, tool_call_id=tool_call["id"], type="tool")
-            ]
-        }
+        if tool_call := state.get_latest_tool_call():
+            response = await self._graph_memory.search(
+                query_text=tool_call["args"]["user_request"]
+            )
+            return State(
+                messages=[ToolMessage(content=response, tool_call_id=tool_call["id"])]
+            )
+        return state
 
     def conditional_router(self, state: State) -> str:
-        messages = state["messages"]
-        last_message = messages[-1]
-
-        if isinstance(last_message, AIMessage) and last_message.tool_calls:
-            logger.info(
-                f"ToolCall - {last_message.tool_calls[0]['name']} - Args {last_message.tool_calls[0]['args']}"
-            )
-            if last_message.tool_calls[0]["name"] == "CancelTestDrive":
+        if tool_call := state.get_latest_tool_call():
+            logger.info(f"ToolCall - {tool_call['name']} - Args {tool_call['args']}")
+            if tool_call["name"] == "CancelTestDrive":
                 return "cancel_test_drive"
-            if last_message.tool_calls[0]["name"] == "CarModelDetails":
+            if tool_call["name"] == "CarModelDetails":
                 return "car_model_details"
             return "tools"
         return END
