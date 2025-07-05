@@ -1,7 +1,6 @@
 from datetime import datetime
 from enum import StrEnum, auto
 from typing import List
-
 import orjson
 from pydantic import BaseModel
 
@@ -14,6 +13,15 @@ class Models(StrEnum):
     GOLF = auto()
     POLO = auto()
     T_CROSS = auto()
+    TIGUAN = auto()
+    JETTA = auto()
+    PASSAT = auto()
+    ARTEON = auto()
+    TAOS = auto()
+    ATLAS = auto()
+    ID_4 = auto()
+    TOUAREG = auto()
+    AMAROK = auto()
 
 
 class Color(StrEnum):
@@ -22,6 +30,8 @@ class Color(StrEnum):
     WHITE = auto()
     RED = auto()
     GREEN = auto()
+    SILVER = auto()
+    GRAY = auto()
 
 
 class TestDriveStatus(StrEnum):
@@ -54,23 +64,23 @@ class TestDrive(BaseModel):
 
 
 def save_inventory() -> None:
-    with open("./store/inventory.json", "w") as f:
+    with open("./data/inventory/inventory.json", "w") as f:
         f.write(INVENTORY.model_dump_json(indent=4))
 
 
 def save_test_drivers() -> None:
-    with open("./store/test_driver.json", "wb") as f:
+    with open("./data/test_drive/test_drive.json", "wb") as f:
         f.write(orjson.dumps([test_drive.model_dump() for test_drive in TEST_DRIVE]))
 
 
 def load_inventory() -> Inventory:
-    with open("./store/inventory.json", "rb") as f:
+    with open("./data/inventory/inventory.json", "rb") as f:
         row_data = orjson.loads(f.read())
     return Inventory(**row_data)
 
 
 def load_test_drivers() -> list[TestDrive]:
-    with open("./store/test_driver.json", "rb") as f:
+    with open("./data/test_drive/test_drive.json", "rb") as f:
         row_data = orjson.loads(f.read())
     return [TestDrive(**data) for data in row_data]
 

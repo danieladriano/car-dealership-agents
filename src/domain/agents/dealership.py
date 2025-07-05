@@ -14,17 +14,18 @@ from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.types import interrupt
-from pydantic import BaseModel, Field
-
-from assets import CancelTestDriveMessages
-from graph_memory import GraphMemory
-from tools.sales import inventory_information, list_inventory
-from tools.test_drive import (
+from pydantic import BaseModel
+from domain.tools.faq import CarModelDetails
+from domain.tools.sales import inventory_information, list_inventory
+from domain.tools.test_drive import (
     CancelTestDrive,
     cancel_test_drive,
     list_test_drives,
     schedule_test_drive,
 )
+
+from application.graph_memory import GraphMemory
+from domain.agents.assets import CancelTestDriveMessages
 
 logger = logging.getLogger("ai-chat")
 
@@ -38,21 +39,7 @@ class State(BaseModel):
         return None
 
 
-class CarModelDetails(BaseModel):
-    """
-    If the user asks for more information about a specific car model.
-    You can awser questions about:
-    - The engine
-    - safety features
-    - dimensions
-    """
-
-    user_request: str = Field(
-        description="The user request about the car model. Do not specify the year of the car."
-    )
-
-
-class Agent:
+class DealershipAgent:
     def __init__(self, llm: BaseChatModel, data_path: Path, cognee_path: Path) -> None:
         self._llm = llm
         self._runnable = self._get_prompt_template() | self._llm.bind_tools(

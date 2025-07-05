@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import uuid
 from pathlib import Path
 from typing import Optional
@@ -12,8 +11,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, Interrupt
 
-from agent import Agent
-from llm_models import SupportedLLMs, get_llm
+from application.llm_models import SupportedLLMs, get_llm
+from domain.agents import DealershipAgent
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -59,13 +58,11 @@ if "graph" not in st.session_state:
     llm = get_llm(llm_model=SupportedLLMs.gemini2_0_flash)
     checkpointer = MemorySaver()
 
-    data_path = Path(  # noqa: F821
-        os.path.join(Path(__file__).parent, ".data_storage")
-    ).resolve()
+    root_path = Path(__file__).parent.parent.parent
+    data_path = Path(root_path, ".data_storage").resolve()
+    cognee_path = Path(root_path, ".cognee_system").resolve()
 
-    cognee_path = Path(os.path.join(Path(__file__).parent, ".cognee_system")).resolve()
-
-    chatbot = Agent(llm=llm, data_path=data_path, cognee_path=cognee_path)
+    chatbot = DealershipAgent(llm=llm, data_path=data_path, cognee_path=cognee_path)
     graph = chatbot.build_agent(checkpointer=checkpointer)
     config = RunnableConfig(configurable={"thread_id": uuid.uuid4()})
 

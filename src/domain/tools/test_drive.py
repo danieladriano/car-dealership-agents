@@ -6,7 +6,7 @@ from typing import List
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from store.dealership_store import (
+from application.store.dealership_store import (
     TEST_DRIVE,
     Car,
     TestDrive,

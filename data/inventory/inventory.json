@@ -1,0 +1,157 @@
+{
+    "availables": [
+        {
+            "brand": "Volkswagen",
+            "model": "golf",
+            "color": "black",
+            "kms": 0,
+            "year": 2025,
+            "value": 35000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "golf",
+            "color": "blue",
+            "kms": 0,
+            "year": 2025,
+            "value": 35500.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "polo",
+            "color": "white",
+            "kms": 0,
+            "year": 2025,
+            "value": 25000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "polo",
+            "color": "red",
+            "kms": 0,
+            "year": 2025,
+            "value": 25500.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "t_cross",
+            "color": "black",
+            "kms": 0,
+            "year": 2025,
+            "value": 33000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "golf",
+            "color": "white",
+            "kms": 14867,
+            "year": 2023,
+            "value": 23500.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "polo",
+            "color": "black",
+            "kms": 58276,
+            "year": 2020,
+            "value": 12350.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "polo",
+            "color": "red",
+            "kms": 9239,
+            "year": 2022,
+            "value": 20000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "t_cross",
+            "color": "black",
+            "kms": 67890,
+            "year": 2024,
+            "value": 27000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "tiguan",
+            "color": "silver",
+            "kms": 15000,
+            "year": 2023,
+            "value": 32000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "jetta",
+            "color": "gray",
+            "kms": 25000,
+            "year": 2022,
+            "value": 21000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "passat",
+            "color": "black",
+            "kms": 40000,
+            "year": 2021,
+            "value": 24000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "arteon",
+            "color": "blue",
+            "kms": 10000,
+            "year": 2024,
+            "value": 45000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "taos",
+            "color": "white",
+            "kms": 5000,
+            "year": 2024,
+            "value": 28000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "atlas",
+            "color": "red",
+            "kms": 30000,
+            "year": 2022,
+            "value": 38000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "id_4",
+            "color": "green",
+            "kms": 5000,
+            "year": 2023,
+            "value": 42000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "golf",
+            "color": "white",
+            "kms": 20000,
+            "year": 2023,
+            "value": 48000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "touareg",
+            "color": "black",
+            "kms": 60000,
+            "year": 2020,
+            "value": 35000.0
+        },
+        {
+            "brand": "Volkswagen",
+            "model": "amarok",
+            "color": "silver",
+            "kms": 80000,
+            "year": 2019,
+            "value": 29000.0
+        }
+    ],
+    "out_of_stock": []
+}
