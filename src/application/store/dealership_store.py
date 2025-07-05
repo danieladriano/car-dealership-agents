@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import StrEnum, auto
 from typing import List
+
 import orjson
 from pydantic import BaseModel
 

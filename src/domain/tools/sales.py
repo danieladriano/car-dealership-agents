@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from langchain_core.tools import tool
+
 from application.store.dealership_store import INVENTORY, Car, Models
 
 logger = logging.getLogger("ai-chat")
