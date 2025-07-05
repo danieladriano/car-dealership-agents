@@ -2,13 +2,12 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, List
-from urllib.error import ContentTooShortError
 
 from git import Optional
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AnyMessage, SystemMessage, AIMessage, ToolCall
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolCall
 from langchain_core.messages.tool import ToolMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
@@ -16,11 +15,10 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 from langgraph.types import interrupt
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
 
 from assets import CancelTestDriveMessages
 from graph_memory import GraphMemory
-from tools.sales import list_inventory, inventory_information
+from tools.sales import inventory_information, list_inventory
 from tools.test_drive import (
     CancelTestDrive,
     cancel_test_drive,

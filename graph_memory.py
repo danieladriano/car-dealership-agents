@@ -1,5 +1,6 @@
 from pathlib import Path
-from cognee import config, search, SearchType
+
+from cognee import SearchType, config, search
 
 
 class GraphMemory:

@@ -1,8 +1,9 @@
-from argparse import ArgumentParser
-import os
 import asyncio
+import os
+from argparse import ArgumentParser
 from pathlib import Path
-from cognee import config, prune, add, cognify, visualize_graph
+
+from cognee import add, cognify, config, prune, visualize_graph
 
 
 def config_cognee() -> None:

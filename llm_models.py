@@ -2,8 +2,8 @@ import os
 from enum import Enum
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
 
 
 class SupportedLLMs(Enum):
