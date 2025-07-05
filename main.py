@@ -1,3 +1,6 @@
+import asyncio
+import os
+from pathlib import Path
 import streamlit as st
 import logging
 from llm_models import SupportedLLMs, get_llm
@@ -36,11 +39,11 @@ def _build_graph_input(
     return {"messages": [("user", user_input)]}
 
 
-def stream_graph_updates(
+async def stream_graph_updates(
     graph: CompiledStateGraph, config: RunnableConfig, user_input: str
 ) -> str:
     message = _build_graph_input(graph=graph, config=config, user_input=user_input)
-    events = graph.invoke(input=message, config=config, stream_mode="values")
+    events = await graph.ainvoke(input=message, config=config, stream_mode="values")
 
     interrupt = _get_interrupt(graph=graph, config=config)
     if interrupt:
@@ -51,16 +54,24 @@ def stream_graph_updates(
 
 st.title("VW - Car Dealership")
 if "graph" not in st.session_state:
-    st.session_state.messages = []
     logger.info("Loading LLM and Graph")
+
     llm = get_llm(llm_model=SupportedLLMs.gemini2_0_flash)
     checkpointer = MemorySaver()
-    chatbot = Agent(llm=llm)
-    graph = chatbot.build_agent(checkpointer=checkpointer)
 
+    data_path = Path(  # noqa: F821
+        os.path.join(Path(__file__).parent, ".data_storage")
+    ).resolve()
+
+    cognee_path = Path(os.path.join(Path(__file__).parent, ".cognee_system")).resolve()
+
+    chatbot = Agent(llm=llm, data_path=data_path, cognee_path=cognee_path)
+    graph = chatbot.build_agent(checkpointer=checkpointer)
     config = RunnableConfig(configurable={"thread_id": uuid.uuid4()})
+
     st.session_state.graph = graph
     st.session_state.config = config
+    st.session_state.messages = []
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -72,10 +83,12 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(body=prompt)
 
     with st.chat_message("assistant"):
-        response = stream_graph_updates(
-            graph=st.session_state.graph,
-            config=st.session_state.config,
-            user_input=prompt,
+        response = asyncio.run(
+            stream_graph_updates(
+                graph=st.session_state.graph,
+                config=st.session_state.config,
+                user_input=prompt,
+            )
         )
         st.markdown(response)
 

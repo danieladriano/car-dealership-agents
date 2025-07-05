@@ -1,7 +1,6 @@
 import logging
 from typing import Optional
 
-from click import Option
 from langchain_core.tools import tool
 
 from store.dealership_store import INVENTORY, Car, Models
@@ -21,8 +20,8 @@ def list_inventory() -> list[Car]:
 
 
 @tool
-def car_information(model: Models, year: int) -> Optional[Car]:
-    """Get more information about specific car
+def inventory_information(model: Models, year: int) -> Optional[Car]:
+    """Get information about a specific car that are in inventory.
 
     Args:
         model (Models): Car model to get information
