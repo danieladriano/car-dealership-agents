@@ -1,3 +1,4 @@
+import os
 import asyncio
 import logging
 import uuid
@@ -57,7 +58,7 @@ if "graph" not in st.session_state:
 
     llm = get_llm(llm_model=SupportedLLMs.gemini2_0_flash)
 
-    root_path = Path(__file__).parent.parent.parent
+    root_path = Path(os.getcwd())
     data_path = Path(root_path, ".data_storage").resolve()
     cognee_path = Path(root_path, ".cognee_system").resolve()
     graph_memory = GraphMemory(data_path=data_path, cognee_path=cognee_path)

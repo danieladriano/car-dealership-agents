@@ -7,16 +7,11 @@ from cognee import add, cognify, config, prune, visualize_graph
 
 
 def config_cognee() -> None:
-    data_directory_path = str(
-        Path(os.path.join(Path(__file__).parent, ".data_storage")).resolve()
-    )
+    data_directory_path = Path(os.getcwd(), ".data_storage").resolve()
+    cognee_directory_path = Path(os.getcwd(), ".cognee_system").resolve()
 
-    cognee_directory_path = str(
-        Path(os.path.join(Path(__file__).parent, ".cognee_system")).resolve()
-    )
-
-    config.data_root_directory(data_directory_path)
-    config.system_root_directory(cognee_directory_path)
+    config.data_root_directory(str(data_directory_path))
+    config.system_root_directory(str(cognee_directory_path))
 
 
 async def prune_cognee() -> None:
@@ -38,7 +33,9 @@ async def main(assets_path: Path) -> None:
 
     graph_file_path = str(
         Path(
-            os.path.join(Path(__file__).parent, ".artifacts/graph_visualization.html")
+            os.path.join(
+                Path(__file__).parent.parent, ".artifacts/graph_visualization.html"
+            )
         ).resolve()
     )
     await visualize_graph(graph_file_path)

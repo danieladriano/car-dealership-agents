@@ -10,18 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 def load_cognee() -> None:
-    data_path = str(
-        Path(  # noqa: F821
-            os.path.join(Path(__file__).parent, ".data_storage")
-        ).resolve()
-    )
+    data_path = Path(os.getcwd(), ".data_storage").resolve()
+    cognee_path = Path(os.getcwd(), ".cognee_system").resolve()
 
-    cognee_path = str(
-        Path(os.path.join(Path(__file__).parent, ".cognee_system")).resolve()
-    )
-
-    cognee.config.data_root_directory(data_root_directory=data_path)
-    cognee.config.system_root_directory(system_root_directory=cognee_path)
+    cognee.config.data_root_directory(data_root_directory=str(data_path))
+    cognee.config.system_root_directory(system_root_directory=str(cognee_path))
 
 
 async def search(query_text: str) -> str:

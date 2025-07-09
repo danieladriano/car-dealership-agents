@@ -4,6 +4,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from application.graph_memory import GraphMemory
 from src.application.agents.dealership import DealershipAgent
 
+
 def build_agent(llm: BaseChatModel, graph_memory: GraphMemory) -> CompiledStateGraph:
     checkpointer = MemorySaver()
     chatbot = DealershipAgent(llm=llm, graph_memory=graph_memory)
