@@ -1,3 +1,3 @@
 #!/bin/bash
 export PYTHONPATH=$(pwd)/src:$PYTHONPATH
-streamlit run src/application/main.py
+uv run streamlit run src/application/main.py

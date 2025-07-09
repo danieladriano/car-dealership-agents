@@ -7,12 +7,12 @@ from typing import Optional
 import streamlit as st
 from langchain_core.messages.human import HumanMessage
 from langchain_core.runnables.config import RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, Interrupt
 
 from application.llm_models import SupportedLLMs, get_llm
-from domain.agents import DealershipAgent
+from src.application.agents.factory import build_agent
+from src.application.graph_memory import GraphMemory
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -38,7 +38,7 @@ def _build_graph_input(
     return {"messages": [("user", user_input)]}
 
 
-async def stream_graph_updates(
+async def invoke_graph(
     graph: CompiledStateGraph, config: RunnableConfig, user_input: str
 ) -> str:
     message = _build_graph_input(graph=graph, config=config, user_input=user_input)
@@ -56,14 +56,13 @@ if "graph" not in st.session_state:
     logger.info("Loading LLM and Graph")
 
     llm = get_llm(llm_model=SupportedLLMs.gemini2_0_flash)
-    checkpointer = MemorySaver()
 
     root_path = Path(__file__).parent.parent.parent
     data_path = Path(root_path, ".data_storage").resolve()
     cognee_path = Path(root_path, ".cognee_system").resolve()
+    graph_memory = GraphMemory(data_path=data_path, cognee_path=cognee_path)
 
-    chatbot = DealershipAgent(llm=llm, data_path=data_path, cognee_path=cognee_path)
-    graph = chatbot.build_agent(checkpointer=checkpointer)
+    graph = build_agent(llm=llm, graph_memory=graph_memory)
     config = RunnableConfig(configurable={"thread_id": uuid.uuid4()})
 
     st.session_state.graph = graph
@@ -81,7 +80,7 @@ if prompt := st.chat_input("What is up?"):
 
     with st.chat_message("assistant"):
         response = asyncio.run(
-            stream_graph_updates(
+            invoke_graph(
                 graph=st.session_state.graph,
                 config=st.session_state.config,
                 user_input=prompt,

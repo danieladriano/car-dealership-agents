@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import Annotated, List
 
 from git import Optional
@@ -17,10 +16,10 @@ from langgraph.types import interrupt
 from pydantic import BaseModel
 
 from application.graph_memory import GraphMemory
-from domain.agents.assets import CancelTestDriveMessages
-from domain.tools.faq import CarModelDetails
-from domain.tools.sales import inventory_information, list_inventory
-from domain.tools.test_drive import (
+from application.agents.assets import CancelTestDriveMessages
+from application.tools.faq import CarModelDetails
+from application.tools.sales import inventory_information, list_inventory
+from application.tools.test_drive import (
     CancelTestDrive,
     cancel_test_drive,
     list_test_drives,
@@ -40,7 +39,7 @@ class State(BaseModel):
 
 
 class DealershipAgent:
-    def __init__(self, llm: BaseChatModel, data_path: Path, cognee_path: Path) -> None:
+    def __init__(self, llm: BaseChatModel, graph_memory: GraphMemory) -> None:
         self._llm = llm
         self._runnable = self._get_prompt_template() | self._llm.bind_tools(
             [
@@ -53,7 +52,7 @@ class DealershipAgent:
             ],
             parallel_tool_calls=False,
         )
-        self._graph_memory = GraphMemory(data_path=data_path, cognee_path=cognee_path)
+        self._graph_memory = graph_memory
 
     def _get_prompt_template(self) -> ChatPromptTemplate:
         content = f""" You are a helpfull Volkswagen Dealership Assistant.
