@@ -1,25 +1,32 @@
-# Car dealership
+# Car Dealership Agent
 
-In this Agent exemple, we use a short-term memory to help our agent to remmenber previous interactions with the user in the same thread-id. Also, we use a interrupt to ask the user for confirmatiom. The agent are using a local LLM running using ollama.
-To run the project:
+A car dealership agent who can use Gemini or models hosted on Ollama to run. Use Cognee to create a graph memory for our agent, which holds some FAQ files.
 
-## Getting started
+The agent can list the vehicles available in stock, schedule, list, or cancel a test drive, and also search in the graph memory (FAQ) for more technical information about some car models (Golf, Polo, and T-Cross).
 
-To locally run the [qwen2.5:14b](https://ollama.com/library/qwen2.5:14b), we are using [Ollama](https://ollama.com/download/linux) version 0.5.7
+## Getting Started
 
-Pull qwen2.5:14b
-```
-ollama pull qwen2.5:14b
-```
+### Prerequisites
 
-The project uses [uv](https://docs.astral.sh/uv/) version 0.6.5 as a dependency management tool.
+It is necessary to create a `.env` file that holds some configurations and your Google API key. Use `.env-template`.
+
+### Dependencies
+
+The project uses [uv](https://docs.astral.sh/uv/) version 0.7.9 as a dependency management tool.
 
 Create a development environment:
 ```
 uv sync
 ```
 
-Run the project:
+## Makefile Commands
+
+The following commands are available in the `Makefile`:
+
+* `make create-graph files="<file_list>"`: Creates a graph from the specified files. For example:
 ```
-uv run main.py
+make create-graph files="data/faq/"
 ```
+* `make search-graph`: Runs a streamlit app that searches inside the memory graph created.
+* `make run-agent`: Runs the car dealership agent.
+* `make format-lit-fix`: format the code
