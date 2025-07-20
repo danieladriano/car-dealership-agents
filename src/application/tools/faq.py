@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class CarModelDetails(BaseModel):
     """
     If the user asks for more information about a specific car model.
-    You can awser questions about:
+    You can answer questions about:
     - The engine
     - safety features
     - dimensions
